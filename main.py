@@ -1,5 +1,6 @@
 import os
 from etl.pipeline import ETLPipeline
+from etl.logger import get_logger
 
 # Puedes usar dotenv si decides guardar las rutas en un .env
 # from dotenv import load_dotenv
@@ -17,7 +18,8 @@ file_paths = {
 }
 
 def main():
-    print("🚀 Iniciando pipeline ETL para Power BI...")
+    logger = get_logger("main")
+    logger.info("Iniciando pipeline ETL para Power BI...")
     pipeline = ETLPipeline(file_paths)
     pipeline.run()
 

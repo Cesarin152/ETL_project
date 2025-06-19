@@ -2,7 +2,7 @@
 
 import pandas as pd
 
-class Transformer:
+class DataTransformer:
     @staticmethod
     def standardize_datetime(df, date_col='Date', time_col='Time', datetime_col='DateTime') -> pd.DataFrame:
         df = df.copy()
@@ -62,14 +62,6 @@ class Transformer:
         return df
 
     @staticmethod
-    def convert_units(df: pd.DataFrame, columns: list[str], factor: float = 1000.0) -> pd.DataFrame:
-        df = df.copy()
-        for col in columns:
-            if col in df.columns:
-                df[col] = df[col] / factor
-        return df
-
-    @staticmethod
     def melt_to_long(df: pd.DataFrame, id_vars: list[str], value_vars: list[str]) -> pd.DataFrame:
         df = df.copy()
         df = df.melt(
@@ -81,3 +73,55 @@ class Transformer:
         df[['Plant', 'Metric']] = df['plant_metric'].str.extract(r'(UP\d+)_(.*)')
         df.drop(columns='plant_metric', inplace=True)
         return df
+
+    # Métodos adicionales utilizados por el pipeline
+    @staticmethod
+    def combine_pvsyst(dfs: list[pd.DataFrame]) -> pd.DataFrame:
+        """Une varios DataFrames de PVSyst en uno solo."""
+        return pd.concat(dfs, ignore_index=True)
+
+    @staticmethod
+    def generate_keys(data: dict[str, pd.DataFrame], datetime_col: str = 'DateTime') -> dict[str, pd.DataFrame]:
+        """Aplica calculate_keys a todos los DataFrames que contengan la columna dada."""
+        result = {}
+        for name, df in data.items():
+            if datetime_col in df.columns:
+                result[name] = DataTransformer.calculate_keys(df, datetime_col)
+            else:
+                result[name] = df
+        return result
+
+    @staticmethod
+    def convert_units(df: pd.DataFrame, factor: float = 1000.0) -> pd.DataFrame:
+        """Convierte columnas de energía de kWh a MWh dividiendo por el factor."""
+        df = df.copy()
+        cols = [c for c in df.columns if c.startswith('UP') and ('MWh' in c or 'kWh' in c)]
+        for col in cols:
+            df[col] = df[col] / factor
+        return df
+
+    @staticmethod
+    def merge_energy_meteo(energia: pd.DataFrame, meteo: pd.DataFrame) -> pd.DataFrame:
+        """Enriquece la energía con las variables meteorológicas."""
+        return pd.merge(energia, meteo, on='DateTime', how='left')
+
+    @staticmethod
+    def melt_energy(df: pd.DataFrame) -> pd.DataFrame:
+        cols = [c for c in df.columns if c.startswith('UP') and ('MWh' in c or 'MVArh' in c)]
+        id_vars = [c for c in df.columns if c not in cols]
+        return DataTransformer.melt_to_long(df, id_vars, cols)
+
+    @staticmethod
+    def melt_pvsyst(df: pd.DataFrame) -> pd.DataFrame:
+        cols = [c for c in df.columns if c not in ['DateTime']]
+        id_vars = ['DateTime'] if 'DateTime' in df.columns else []
+        return DataTransformer.melt_to_long(df, id_vars, cols)
+
+
+# Funciones utilitarias para compatibilidad con las pruebas
+def standardize_datetime(df, date_col='Date', time_col='Time', datetime_col='DateTime') -> pd.DataFrame:
+    return DataTransformer.standardize_datetime(df, date_col, time_col, datetime_col)
+
+
+def expand_datetime(df, datetime_col='DateTime', up_to='minute') -> pd.DataFrame:
+    return DataTransformer.expand_datetime(df, datetime_col, up_to)
