@@ -82,6 +82,48 @@ class Transformer:
         df.drop(columns='plant_metric', inplace=True)
         return df
 
+    # ------------------------------------------------------------------
+    # Métodos de instancia utilizados por el pipeline
+    # ------------------------------------------------------------------
+
+    def combine_pvsyst(self, dfs: list[pd.DataFrame]) -> pd.DataFrame:
+        """Une una lista de DataFrames de PVSyst en uno solo."""
+        return pd.concat(dfs, ignore_index=True)
+
+    def generate_keys(self, data_dict: dict) -> dict:
+        """Genera columnas de claves para todos los DataFrames que contengan
+        ``DateTime``."""
+        for key, df in data_dict.items():
+            if isinstance(df, pd.DataFrame) and 'DateTime' in df.columns:
+                data_dict[key] = self.calculate_keys(df, datetime_col='DateTime')
+        return data_dict
+
+    def convert_units(self, df: pd.DataFrame, columns: list[str] | None = None, factor: float = 1000.0) -> pd.DataFrame:
+        """Convierte unidades de energía de kWh a MWh.
+
+        Si ``columns`` es ``None`` se detectarán automáticamente todas las
+        columnas que contengan ``_MWh`` o ``_MVArh``.
+        """
+        if columns is None:
+            columns = [c for c in df.columns if c.endswith('_MWh') or c.endswith('_MVArh')]
+        return self.__class__.convert_units(df, columns=columns, factor=factor)
+
+    def merge_energy_meteo(self, energia: pd.DataFrame, meteo: pd.DataFrame) -> pd.DataFrame:
+        """Une los DataFrames de energía y meteorología por ``DateTime``."""
+        return pd.merge(energia, meteo, on='DateTime')
+
+    def melt_energy(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Convierte a formato largo los datos de energía."""
+        value_vars = [c for c in df.columns if c.endswith('_MWh') or c.endswith('_MVArh')]
+        id_vars = [c for c in df.columns if c not in value_vars]
+        return self.melt_to_long(df, id_vars=id_vars, value_vars=value_vars)
+
+    def melt_pvsyst(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Convierte a formato largo los datos de PVSyst."""
+        value_vars = [c for c in df.columns if c.endswith('_E')]
+        id_vars = [c for c in df.columns if c not in value_vars]
+        return self.melt_to_long(df, id_vars=id_vars, value_vars=value_vars)
+
 
 # Alias para mantener compatibilidad con el código existente
 DataTransformer = Transformer
