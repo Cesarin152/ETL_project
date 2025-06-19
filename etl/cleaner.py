@@ -82,6 +82,11 @@ def fill_missing_values(df: pd.DataFrame, method: str = 'mean', category_col: st
     return DataCleaner.fill_missing_values(df, method=method, category_col=category_col, threshold=threshold)
 
 
+def fill_missing(df: pd.DataFrame, method: str = 'mean', category_col: str | None = None, threshold: float = 0.05) -> pd.DataFrame:
+    """Compatibilidad: alias de :func:`fill_missing_values`."""
+    return DataCleaner.fill_missing_values(df, method=method, category_col=category_col, threshold=threshold)
+
+
 def remove_outliers(df: pd.DataFrame, column: str, threshold: float = 3.0) -> pd.DataFrame:
     """Wrapper que delega en :class:`DataCleaner` para eliminar outliers."""
     return DataCleaner.remove_outliers(df, column=column, threshold=threshold)
