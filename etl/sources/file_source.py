@@ -9,26 +9,22 @@ class FileSource(DataSource):
     Soporta archivos .csv y .xlsx.
     """
 
-    def __init__(self, filepath: str):
+    def __init__(self):
+        """Fuente de archivos local sin ruta fija."""
+        pass
+
+    def load_excel(self, filepath: str) -> pd.DataFrame:
+        """Carga un archivo Excel o CSV y limpia columnas auxiliares."""
         if not os.path.exists(filepath):
             raise FileNotFoundError(f"Archivo no encontrado: {filepath}")
-        self.filepath = filepath
 
-    def load(self) -> pd.DataFrame:
-        """
-        Carga el archivo y elimina columnas innecesarias (tipo 'Unnamed').
-
-        Retorna:
-        pd.DataFrame: DataFrame limpio
-        """
-        if self.filepath.endswith('.csv'):
-            df = pd.read_csv(self.filepath)
-        elif self.filepath.endswith('.xlsx'):
-            df = pd.read_excel(self.filepath)
+        if filepath.endswith('.csv'):
+            df = pd.read_csv(filepath)
+        elif filepath.endswith('.xlsx') or filepath.endswith('.xls'):
+            df = pd.read_excel(filepath)
         else:
             raise ValueError("Formato no soportado. Usa .csv o .xlsx")
 
         # Eliminar columnas tipo 'Unnamed'
         df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
-
         return df
