@@ -2,6 +2,7 @@ from sqlalchemy import create_engine
 import pandas as pd
 import os
 from dotenv import load_dotenv
+from etl.logger import get_logger
 
 # Cargar variables de entorno desde .env
 load_dotenv()
@@ -19,6 +20,7 @@ class DatabaseLoader:
         driver = os.getenv("DB_DRIVER", "postgresql")  # por defecto PostgreSQL
 
         self.engine = create_engine(f"{driver}://{user}:{password}@{host}:{port}/{db}")
+        self.logger = get_logger(self.__class__.__name__)
     
     def insert_dataframe(self, df: pd.DataFrame, table_name: str, if_exists="append"):
         """
@@ -31,9 +33,9 @@ class DatabaseLoader:
         """
         try:
             df.to_sql(table_name, self.engine, index=False, if_exists=if_exists, method="multi")
-            print(f"✅ Datos insertados en la tabla '{table_name}' ({len(df)} filas).")
+            self.logger.info("Datos insertados en la tabla '%s' (%s filas)", table_name, len(df))
         except Exception as e:
-            print(f"❌ Error al insertar en la tabla '{table_name}': {e}")
+            self.logger.error("Error al insertar en la tabla '%s': %s", table_name, e)
 
     def test_connection(self):
         """
@@ -42,6 +44,6 @@ class DatabaseLoader:
         try:
             with self.engine.connect() as conn:
                 conn.execute("SELECT 1")
-            print("✅ Conexión a base de datos exitosa.")
+            self.logger.info("Conexión a base de datos exitosa.")
         except Exception as e:
-            print(f"❌ Error de conexión a base de datos: {e}")
+            self.logger.error("Error de conexión a base de datos: %s", e)
