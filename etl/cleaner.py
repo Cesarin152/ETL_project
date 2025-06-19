@@ -51,6 +51,11 @@ class DataCleaner:
 
         return df
 
+    # Alias para mantener compatibilidad con el pipeline
+    @staticmethod
+    def fill_missing(df: pd.DataFrame, method='mean', category_col=None, threshold=0.05) -> pd.DataFrame:
+        return DataCleaner.fill_missing_values(df, method, category_col, threshold)
+
     @staticmethod
     def fix_negatives(df: pd.DataFrame, columns: list[str]) -> pd.DataFrame:
         """
@@ -65,10 +70,22 @@ class DataCleaner:
     @staticmethod
     def remove_outliers(df: pd.DataFrame, column: str, threshold: float = 3.0) -> pd.DataFrame:
         """
-        Elimina outliers basados en Z-score para una columna específica.
+        Elimina outliers utilizando el método del rango intercuartílico.
         """
         df = df.copy()
         if column in df.columns and pd.api.types.is_numeric_dtype(df[column]):
-            z_scores = np.abs(stats.zscore(df[column], nan_policy='omit'))
-            return df[z_scores < threshold]
+            q1 = df[column].quantile(0.25)
+            q3 = df[column].quantile(0.75)
+            iqr = q3 - q1
+            lower = q1 - threshold * iqr
+            upper = q3 + threshold * iqr
+            return df[(df[column] >= lower) & (df[column] <= upper)]
         return df
+
+# Funciones de conveniencia para importar directamente
+def fill_missing_values(df: pd.DataFrame, method='mean', category_col=None, threshold=0.05) -> pd.DataFrame:
+    return DataCleaner.fill_missing_values(df, method, category_col, threshold)
+
+
+def remove_outliers(df: pd.DataFrame, column: str, threshold: float = 3.0) -> pd.DataFrame:
+    return DataCleaner.remove_outliers(df, column, threshold)

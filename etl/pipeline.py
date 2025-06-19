@@ -3,6 +3,7 @@ from etl.transformer import DataTransformer
 from etl.cleaner import DataCleaner
 from etl.db_loader import DatabaseLoader
 from etl.mappings import rename_dicts
+from etl.logger import get_logger
 
 class ETLPipeline:
     def __init__(self, file_paths: dict[str, str]):
@@ -17,6 +18,7 @@ class ETLPipeline:
         self.transformer = DataTransformer()
         self.cleaner = DataCleaner()
         self.db = DatabaseLoader()
+        self.logger = get_logger(self.__class__.__name__)
 
         # DataFrames cargados
         self.data = {}
@@ -25,11 +27,11 @@ class ETLPipeline:
         """
         Ejecuta el pipeline completo de ETL.
         """
-        print("▶️ Iniciando proceso ETL...")
+        self.logger.info("Iniciando proceso ETL...")
 
         # 1. Cargar archivos
         for name, path in self.file_paths.items():
-            print(f"📂 Cargando: {name}")
+            self.logger.info("Cargando archivo: %s", name)
             self.data[name] = self.source.load_excel(path)
 
         # 2. Estandarizar fechas
@@ -94,4 +96,4 @@ class ETLPipeline:
         self.db.insert_dataframe(self.data["energia_long"], table_name="energia_consolidada")
         self.db.insert_dataframe(self.data["pvsyst_long"], table_name="pvsyst_datos")
 
-        print("✅ ETL finalizado correctamente.")
+        self.logger.info("ETL finalizado correctamente.")
