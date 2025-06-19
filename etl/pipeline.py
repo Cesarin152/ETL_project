@@ -13,7 +13,6 @@ class ETLPipeline:
             file_paths (dict): Diccionario con nombre lógico -> ruta archivo.
         """
         self.file_paths = file_paths
-        self.source = FileSource()
         self.transformer = DataTransformer()
         self.cleaner = DataCleaner()
         self.db = DatabaseLoader()
@@ -30,7 +29,8 @@ class ETLPipeline:
         # 1. Cargar archivos
         for name, path in self.file_paths.items():
             print(f"📂 Cargando: {name}")
-            self.data[name] = self.source.load_excel(path)
+            source = FileSource(path)
+            self.data[name] = source.load()
 
         # 2. Estandarizar fechas
         self.data["cms"] = self.transformer.standardize_datetime(
@@ -74,7 +74,7 @@ class ETLPipeline:
         )
 
         # 9. Limpiar datos
-        self.data["energia_consolidada"] = self.cleaner.fill_missing(
+        self.data["energia_consolidada"] = self.cleaner.fill_missing_values(
             self.data["energia_consolidada"], method='mean', category_col="key_month"
         )
         self.data["energia_consolidada"] = self.cleaner.fix_negatives(

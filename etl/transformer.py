@@ -62,8 +62,13 @@ class Transformer:
         return df
 
     @staticmethod
-    def convert_units(df: pd.DataFrame, columns: list[str], factor: float = 1000.0) -> pd.DataFrame:
+    def convert_units(
+        df: pd.DataFrame, columns: list[str] | None = None, factor: float = 1000.0
+    ) -> pd.DataFrame:
+        """Divide the selected numeric columns by ``factor`` (default 1000)."""
         df = df.copy()
+        if columns is None:
+            columns = [c for c in df.columns if pd.api.types.is_numeric_dtype(df[c])]
         for col in columns:
             if col in df.columns:
                 df[col] = df[col] / factor
@@ -81,6 +86,53 @@ class Transformer:
         df[['Plant', 'Metric']] = df['plant_metric'].str.extract(r'(UP\d+)_(.*)')
         df.drop(columns='plant_metric', inplace=True)
         return df
+
+    @staticmethod
+    def combine_pvsyst(dfs: list[pd.DataFrame]) -> pd.DataFrame:
+        """Concatenate multiple PVSyst DataFrames adding a ``Plant`` column."""
+        tagged = []
+        for idx, df in enumerate(dfs, start=1):
+            temp = df.copy()
+            temp["Plant"] = f"UP{idx}"
+            tagged.append(temp)
+        return pd.concat(tagged, ignore_index=True)
+
+    @staticmethod
+    def generate_keys(data: dict[str, pd.DataFrame]) -> dict[str, pd.DataFrame]:
+        """Apply :func:`calculate_keys` to all DataFrames containing a date."""
+        result = {}
+        for name, df in data.items():
+            if "DateTime" in df.columns:
+                result[name] = Transformer.calculate_keys(df, "DateTime")
+            elif "Date" in df.columns:
+                temp = df.copy()
+                temp["Date"] = pd.to_datetime(temp["Date"], errors="coerce")
+                temp["key"] = temp["Date"].dt.strftime("%d_%m_%Y")
+                temp["key_m"] = temp["Date"].dt.strftime("%d_%m_%Y_00_00")
+                temp["key_month"] = temp["Date"].dt.strftime("%m_%Y")
+                result[name] = temp
+            else:
+                result[name] = df
+        return result
+
+    @staticmethod
+    def merge_energy_meteo(df_energy: pd.DataFrame, df_meteo: pd.DataFrame) -> pd.DataFrame:
+        """Merge energy and meteorological information on ``DateTime``."""
+        return pd.merge(df_energy, df_meteo, on="DateTime", how="left")
+
+    @staticmethod
+    def melt_energy(df: pd.DataFrame) -> pd.DataFrame:
+        """Convert wide energy dataframe to long format per plant/metric."""
+        value_vars = [c for c in df.columns if c.startswith("UP")]
+        id_vars = [c for c in df.columns if c not in value_vars]
+        return Transformer.melt_to_long(df, id_vars=id_vars, value_vars=value_vars)
+
+    @staticmethod
+    def melt_pvsyst(df: pd.DataFrame) -> pd.DataFrame:
+        """Melt combined PVSyst dataframe."""
+        id_vars = [c for c in ["Date", "Plant"] if c in df.columns]
+        value_vars = [c for c in df.columns if c not in id_vars]
+        return df.melt(id_vars=id_vars, value_vars=value_vars, var_name="Metric", value_name="Value")
 
 
 # Alias para mantener compatibilidad con el código existente

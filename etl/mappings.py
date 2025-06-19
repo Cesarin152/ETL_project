@@ -43,3 +43,10 @@ METEO_COLUMNS_RENAME = {
     'Universidad Panamá 3 - Meteo - Relative Humidity (%)': 'UP3_Humid_pct',
     # 'Universidad Panamá 3 - Meteo - Plant Insolation (kWh/m2)': 'UP3_Ins_kWh_m2',  # calculado manualmente
 }
+
+# Mapeo general para acceso unificado
+rename_dicts = {
+    "energia": ENERGY_COLUMNS_RENAME,
+    "meteo": METEO_COLUMNS_RENAME,
+    "pvsyst": PVSYST_COLUMNS_RENAME,
+}
