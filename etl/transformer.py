@@ -81,3 +81,17 @@ class Transformer:
         df[['Plant', 'Metric']] = df['plant_metric'].str.extract(r'(UP\d+)_(.*)')
         df.drop(columns='plant_metric', inplace=True)
         return df
+
+
+# Alias para mantener compatibilidad con el código existente
+DataTransformer = Transformer
+
+
+def standardize_datetime(df, date_col='Date', time_col='Time', datetime_col='DateTime') -> pd.DataFrame:
+    """Wrapper para compatibilidad con los tests."""
+    return DataTransformer.standardize_datetime(df, date_col=date_col, time_col=time_col, datetime_col=datetime_col)
+
+
+def expand_datetime(df, datetime_col='DateTime', up_to='minute') -> pd.DataFrame:
+    """Wrapper para compatibilidad con los tests."""
+    return DataTransformer.expand_datetime(df, datetime_col=datetime_col, up_to=up_to)

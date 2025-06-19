@@ -7,13 +7,13 @@ from etl.pipeline import ETLPipeline
 
 # Definir rutas de archivos (puedes mover esto a un JSON o .env en el futuro)
 file_paths = {
-    "cms": os.path.join("data", "CMS_Mejorado.xlsx"),
-    "energia": os.path.join("data", "Energia.xlsx"),
-    "meteo": os.path.join("data", "Meteo.xlsx"),
-    "up1_pvsyst": os.path.join("data", "UP1_pvsyst.xlsx"),
-    "up2_pvsyst": os.path.join("data", "UP2_pvsyst.xlsx"),
-    "up3_pvsyst": os.path.join("data", "UP3_pvsyst.xlsx"),
-    "up4_pvsyst": os.path.join("data", "UP4_pvsyst.xlsx"),
+    "cms": os.path.join("Data", "CMS_Mejorado.xlsx"),
+    "energia": os.path.join("Data", "Energia.xlsx"),
+    "meteo": os.path.join("Data", "Meteo.xlsx"),
+    "up1_pvsyst": os.path.join("Data", "UP1_pvsyst.xlsx"),
+    "up2_pvsyst": os.path.join("Data", "UP2_pvsyst.xlsx"),
+    "up3_pvsyst": os.path.join("Data", "UP3_pvsyst.xlsx"),
+    "up4_pvsyst": os.path.join("Data", "UP4_pvsyst.xlsx"),
 }
 
 def main():
